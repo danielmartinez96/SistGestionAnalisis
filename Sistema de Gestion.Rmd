@@ -1,0 +1,92 @@
+---
+title: "Sistema de gestion"
+fig:height: 4
+output:
+  html_notebook:
+    df_print: paged
+    fig:height: 4
+    fig:width: 6
+    toc: yes
+    toc_float: yes
+  html_document:
+    
+    df_print: paged
+    toc: yes
+author: Martinez Daniel 
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Librerias
+
+```{r Carga de librerias}
+
+library(readr) #libreria para facilitar la lectura
+library(dplyr) #libreria para facilitar la manipulación del dataset
+library(fastDummies) # libreria para encoding
+library("corrplot") # lbreria para ver la correlacion entre variables
+library(Hmisc)# lbreria para el describe
+library(lubridate) #libreria para graficos
+```
+
+
+
+```{r Carga de csv}
+raw_empleado = read.csv("Empleados.csv",sep= ";") #lectura del archivo .csv
+raw_ventas = read.csv("Ventas.csv",sep= ";") #lectura del archivo .csv
+raw_productos = read.csv("productos.csv",sep= ";") #lectura del archivo .csv
+```
+
+
+
+```{r}
+raw_empleado$Fch.comienzo =  as.Date(raw_empleado$Fch.comienzo, format = "%d/%m/%Y")
+raw_empleado$Fch.nacimiento =  as.Date(raw_empleado$Fch.nacimiento, format = "%d/%m/%Y")
+raw_empleado$Baja = as.Date(raw_empleado$Baja, format = "%d/%m/%Y")
+```
+
+
+
+
+```{r }
+hoy=Sys.Date()
+empleado=mutate(raw_empleado,left=ifelse(is.na(Baja),0,1))
+
+empleado=mutate(empleado,antiguedad=ifelse(left,                 ifelse(month(Fch.comienzo)>month(Baja),year(hoy)-year(Fch.comienzo),year(Baja)-year(Fch.comienzo)-1),
+                  ifelse(month(Fch.comienzo)>month(hoy),year(hoy)-year(Fch.comienzo),year(hoy)-year(Fch.comienzo)-1)
+                ))
+
+empleado=mutate(empleado,edad=ifelse(left,
+                                     ifelse(month(Fch.nacimiento)>month(Baja),year(hoy)-year(Fch.nacimiento),year(Baja)-year(Fch.nacimiento)-1),
+                                     ifelse(month(Fch.nacimiento)>month(hoy),year(hoy)-year(Fch.nacimiento),year(hoy)-year(Fch.nacimiento)-1)))
+
+
+empleado$Fch.comienzo=NULL
+empleado$Fch.nacimiento=NULL
+empleado$Baja=NULL
+
+empleado$left=as.factor(empleado$left)
+empleado$Salario=as.numeric(empleado$Salario)
+
+```
+
+
+```{r}
+pie(summary(empleado$Cargo), main = "Distribución de 'Cargos'")
+
+```
+
+```{r}
+par(mfrow = c(1,2))
+pie(summary(empleado$left), main = "Distribución de 'Bajas'")
+hist(empleado$antiguedad)
+```
+
+```{r}
+hist(empleado$Salario)
+
+```
